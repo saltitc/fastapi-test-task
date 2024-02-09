@@ -7,7 +7,7 @@
 1. Создайте виртуальное окружение и активируйте его:
 
     ```bash
-    $ python -m venv venv
+    $ python3.11 -m venv venv
     $ source venv/bin/activate  # Для Unix
     $ .\venv\Scripts\activate  # Для Windows
     ```
