@@ -1,7 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from app.database import Base, test_engine
+from app.database import Base, engine
 from app.main import app
 
 
@@ -15,9 +15,9 @@ class TestUserAPI:
         """
         Fixture to set up and tear down the database for testing
         """
-        Base.metadata.create_all(bind=test_engine)
+        Base.metadata.create_all(bind=engine)
         yield
-        Base.metadata.drop_all(bind=test_engine)
+        Base.metadata.drop_all(bind=engine)
 
     @pytest.fixture(scope="module")
     def client(self):

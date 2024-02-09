@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+
 from fastapi import HTTPException
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -32,7 +33,7 @@ class UserService:
         offset_max = (page + 1) * limit
 
         users = self.session.query(User).all()[offset_min:offset_max]
-        return {"page": page, "limit": limit, "users": users[offset_min:offset_max]}
+        return {"page": page, "limit": limit, "users": users}
 
     def get_user(self, user_id: int):
         user = self.session.query(User).filter(User.id == user_id).first()

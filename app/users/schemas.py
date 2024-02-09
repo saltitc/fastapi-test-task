@@ -4,6 +4,13 @@ from typing import Optional
 from pydantic import BaseModel
 
 
+class UserActivity(BaseModel):
+    """
+    Schema for output user activity data
+    """
+    next_month_activity: int
+
+
 class UserCreate(BaseModel):
     """
     Schema for input data when creating a user
@@ -28,6 +35,17 @@ class UserOut(BaseModel):
     username: str
     email: str
     registration_date: datetime
+
+
+class UserInfoOut(UserOut):
+    """
+    Schema for output user data
+    """
+    id: int
+    username: str
+    email: str
+    registration_date: datetime
+    activity_probability_next_month: float | None
 
 
 class UsersPaginatedOut(BaseModel):

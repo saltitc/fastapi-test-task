@@ -1,7 +1,10 @@
 from fastapi import APIRouter, Query
 
 from app.database import SessionLocal
-from app.users.schemas import UserCreate, UserOut, UsersPaginatedOut, UserUpdate, UserStatistics
+from app.users.activity.models import UserActivity
+from app.users.activity.service import ActivityPredictionService
+from app.users.schemas import (UserCreate, UserInfoOut, UserOut,
+                               UsersPaginatedOut, UserStatistics, UserUpdate)
 from app.users.service import UserService
 
 router = APIRouter(
@@ -9,6 +12,7 @@ router = APIRouter(
     tags=["Users"]
 )
 UserService = UserService(SessionLocal())
+ActivityPredictionService = ActivityPredictionService()
 
 
 @router.post("/", response_model=UserOut)
@@ -29,12 +33,34 @@ def get_users(page: int = Query(ge=0, default=0), limit: int = Query(ge=1, le=10
     return UserService.get_users(page, limit)
 
 
-@router.get("/{user_id}", response_model=UserOut)
+@router.get("/{user_id}", response_model=UserInfoOut)
 def get_user(user_id: int):
     """
     API endpoint for obtaining information about a user by his id
     """
-    return UserService.get_user(user_id)
+    user = UserService.get_user(user_id)
+    user_activity = user.activity[0] if user.activity else None
+    if user_activity:
+        user_activity_data = {
+            "visits": user_activity.visits,
+            "actions": user_activity.actions,
+            "session_duration": user_activity.session_duration
+        }
+        user_activities = SessionLocal().query(UserActivity).all()
+        activity_model = ActivityPredictionService.train_model(user_activities)
+        activity_probability = ActivityPredictionService.predict_activity_probability(activity_model,
+                                                                                      user_activity_data)
+    else:
+        activity_probability = None
+
+    user_data_with_activity = {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "registration_date": user.registration_date,
+        "activity_probability_next_month": activity_probability
+    }
+    return user_data_with_activity
 
 
 @router.patch("/{user_id}", response_model=UserOut)
