@@ -37,3 +37,12 @@ class UsersPaginatedOut(BaseModel):
     page: int
     limit: int
     users: list[UserOut]
+
+
+class UserStatistics(BaseModel):
+    """
+    Schema for output when reading a user list with pagination support
+    """
+    recent_users_count: int
+    top_users_with_longest_names: list
+    email_domain_percentage: float

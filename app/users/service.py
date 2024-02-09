@@ -1,4 +1,6 @@
+from datetime import datetime, timedelta
 from fastapi import HTTPException
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.users.models import User
@@ -57,3 +59,31 @@ class UserService:
         self.session.delete(db_user)
         self.session.commit()
         return {"message": "User deleted successfully"}
+
+    def count_recent_users(self) -> int:
+        """
+        Count the number of users registered in the last 7 days.
+        """
+        today = datetime.now().date()
+        week_ago = today - timedelta(days=7)
+        recent_users_count = self.session.query(func.count(User.id)).filter(User.registration_date >= week_ago).scalar()
+        return recent_users_count
+
+    def top_users_with_longest_names(self) -> list[User]:
+        """
+        Return the top 5 users with the longest names.
+        """
+        top_users = self.session.query(User).order_by(func.length(User.username).desc()).limit(5).all()
+        return top_users
+
+    def email_domain_percentage(self, domain: str) -> float:
+        """
+        Calculate the percentage of users with email addresses registered in the specified domain.
+        """
+        total_users = self.session.query(func.count(User.id)).scalar()
+        users_with_domain = self.session.query(func.count(User.id)).filter(User.email.like(f"%@{domain}")).scalar()
+        if total_users > 0:
+            domain_percentage = (users_with_domain / total_users) * 100
+        else:
+            domain_percentage = 0.0
+        return domain_percentage

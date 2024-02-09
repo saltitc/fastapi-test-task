@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Query
 
 from app.database import SessionLocal
-from app.users.schemas import UserCreate, UserOut, UsersPaginatedOut, UserUpdate
+from app.users.schemas import UserCreate, UserOut, UsersPaginatedOut, UserUpdate, UserStatistics
 from app.users.service import UserService
 
 router = APIRouter(
@@ -51,3 +51,22 @@ def delete_user(user_id: int):
     API endpoint for deleting a user
     """
     return UserService.delete_user(user_id)
+
+
+@router.get("/statistics/", response_model=UserStatistics)
+def user_statistics(domain: str = Query(default=None)):
+    """
+    Get user statistics including the number of users registered in the last 7 days,
+    top 5 users with the longest names, and the percentage of users with email addresses
+    in the specified domain.
+    """
+    recent_users_count = UserService.count_recent_users()
+    top_users = UserService.top_users_with_longest_names()
+    domain_percentage = None
+    if domain:
+        domain_percentage = UserService.email_domain_percentage(domain)
+    return {
+        "recent_users_count": recent_users_count,
+        "top_users_with_longest_names": [user.username for user in top_users],
+        "email_domain_percentage": domain_percentage
+    }

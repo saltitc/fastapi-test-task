@@ -1,6 +1,5 @@
 import pytest
-
-from app.database import Base, SessionLocal, engine
+from app.database import Base, SessionLocalTest, test_engine
 from app.users.models import User
 from app.users.schemas import UserCreate, UserUpdate
 from app.users.service import UserService
@@ -16,15 +15,15 @@ class TestUserService:
         """
         Fixture to set up and tear down the database for testing
         """
-        Base.metadata.create_all(bind=engine)
+        Base.metadata.create_all(bind=test_engine)
         yield
-        Base.metadata.drop_all(bind=engine)
+        Base.metadata.drop_all(bind=test_engine)
 
     def test_create_user_service(self, db):
         """
         Test creating a new user via the UserService
         """
-        with SessionLocal() as session:
+        with SessionLocalTest() as session:
             user_service = UserService(session)
             user_data = UserCreate(username="test_user", email="test@example.com")
             created_user = user_service.create_user(user_data)
@@ -35,7 +34,7 @@ class TestUserService:
         """
         Test fetching a list of users via the UserService
         """
-        with SessionLocal() as session:
+        with SessionLocalTest() as session:
             user_service = UserService(session)
             page_data = user_service.get_users(0, 10)
             assert len(page_data["users"]) == 1
@@ -44,7 +43,7 @@ class TestUserService:
         """
         Test fetching a single user by ID via the UserService
         """
-        with SessionLocal() as session:
+        with SessionLocalTest() as session:
             user_service = UserService(session)
             user_id = 1
             user = user_service.get_user(user_id)
@@ -55,7 +54,7 @@ class TestUserService:
         """
         Test updating user information via the UserService
         """
-        with SessionLocal() as session:
+        with SessionLocalTest() as session:
             user_service = UserService(session)
             user_id = 1
             updated_data = UserUpdate(username="updated_user")
@@ -66,9 +65,43 @@ class TestUserService:
         """
         Test deleting a user via the UserService
         """
-        with SessionLocal() as session:
+        with SessionLocalTest() as session:
             user_service = UserService(session)
             user_id = 1
             user_service.delete_user(user_id)
             deleted_user = session.query(User).filter(User.id == user_id).first()
             assert deleted_user is None
+
+    def test_count_recent_users(self, db):
+        """
+        Test counting recent users registered in the last 7 days
+        """
+        with SessionLocalTest() as session:
+            user_service = UserService(session)
+            user_data = UserCreate(username="test_user", email="test@example.com")
+            user_service.create_user(user_data)
+
+            user_data = UserCreate(username="test_user2", email="test@gmail.com")
+            user_service.create_user(user_data)
+
+            recent_users_count = user_service.count_recent_users()
+            assert recent_users_count == 2
+
+    def test_top_users_with_longest_names(self, db):
+        """
+        Test getting top 5 users with the longest names
+        """
+        with SessionLocalTest() as session:
+            user_service = UserService(session)
+            top_users = user_service.top_users_with_longest_names()
+            assert len(top_users) == 2
+
+    def test_email_domain_percentage(self, db):
+        """
+        Test calculating the percentage of users with email addresses registered in the specified domain
+        """
+        with SessionLocalTest() as session:
+            user_service = UserService(session)
+            domain = "example.com"
+            domain_percentage = user_service.email_domain_percentage(domain)
+            assert domain_percentage == 50.0
